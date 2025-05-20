@@ -4,22 +4,22 @@
 
 Adafruit_MPU6050 mpu;
 
-// ---- GPIO 配置 ----
-#define BUTTON_PIN 9      // 你焊的按钮（D9 = GPIO9）
-#define RED_PIN    21     // RGB 红色通道（D6 = GPIO21）
-#define GREEN_PIN  20     // RGB 绿色通道（D7 = GPIO20）
-#define BLUE_PIN   8      // RGB 蓝色通道（D8 = GPIO8）
+// ---- GPIO Configuration ----
+#define BUTTON_PIN 9      // Physical push button (D9 = GPIO9)
+#define RED_PIN    21     // RGB red channel (D6 = GPIO21)
+#define GREEN_PIN  20     // RGB green channel (D7 = GPIO20)
+#define BLUE_PIN   8      // RGB blue channel (D8 = GPIO8)
 
-// ---- 状态变量 ----
+// ---- State Variables ----
 long last_sample_millis = 0;
 bool capture = false;
 bool alreadyPressed = false;
 unsigned long capture_start_time = 0;
-const unsigned long CAPTURE_DURATION = 1000; // 1 秒
+const unsigned long CAPTURE_DURATION = 1000; // Capture window: 1 second
 
-String currentGesture = "Z"; // 默认手势是 Z（可以通过串口切换为 O / V）
+String currentGesture = "Z"; // Default label is "Z"; can switch via Serial input
 
-// ---- RGB 控制 ----
+// ---- RGB Control ----
 void initRGB() {
   pinMode(RED_PIN, OUTPUT);
   pinMode(GREEN_PIN, OUTPUT);
@@ -33,25 +33,25 @@ void setRGB(uint8_t r, uint8_t g, uint8_t b) {
 }
 
 void indicateGestureColor(String g) {
-  if (g == "Z")      setRGB(255, 0, 0);   // 红：Z → Fire Bolt
-  else if (g == "O") setRGB(0, 255, 0);   // 绿：O → Reflect Shield
-  else if (g == "V") setRGB(0, 0, 255);   // 蓝：V → Healing
-  else               setRGB(255, 255, 0); // 黄：未知标签
+  if (g == "Z")      setRGB(255, 0, 0);   // Red: Z → Fire Bolt
+  else if (g == "O") setRGB(0, 255, 0);   // Green: O → Reflect Shield
+  else if (g == "V") setRGB(0, 0, 255);   // Blue: V → Healing
+  else               setRGB(255, 255, 0); // Yellow: Unknown label
 }
 
-// ---- 初始化 ----
+// ---- Initialization ----
 void setup(void) {
   Serial.begin(115200);
-  delay(2000); // 串口稳定时间
+  delay(2000); // Allow Serial to stabilize
 
-  // I2C 初始化（你的板子 SDA = GPIO6, SCL = GPIO7）
+  // Initialize I2C (SDA = GPIO6, SCL = GPIO7)
   Wire.begin(6, 7);
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   initRGB();
-  setRGB(0, 0, 0); // 默认熄灭 RGB
+  setRGB(0, 0, 0); // Turn off RGB by default
 
-  // MPU6050 初始化
+  // Initialize MPU6050
   while (!mpu.begin()) {
     Serial.println("Failed to find MPU6050 chip");
     delay(500);
@@ -64,9 +64,9 @@ void setup(void) {
   Serial.println("MPU6050 ready.");
 }
 
-// ---- 数据采集 ----
+// ---- Capture Accelerometer Data ----
 void capture_data() {
-  if ((millis() - last_sample_millis) >= 10) { // 100Hz 采样
+  if ((millis() - last_sample_millis) >= 10) { // 100Hz sampling rate
     last_sample_millis = millis();
 
     sensors_event_t a, g, temp;
@@ -81,38 +81,38 @@ void capture_data() {
 
     if (millis() - capture_start_time >= CAPTURE_DURATION) {
       capture = false;
-      setRGB(0, 255, 0);  // 绿灯表示采集完成（可改为熄灯）
+      setRGB(0, 255, 0);  // Green LED to indicate capture complete (optional)
       Serial.print("\n\n\n\n");
       Serial.println("Capture complete (1 second)");
     }
   }
 }
 
-// ---- 主循环 ----
+// ---- Main Loop ----
 void loop() {
-  // 按钮触发逻辑（代替输入 'o'）
+  // Button-press logic (replaces typing 'o' from Serial)
   int buttonState = digitalRead(BUTTON_PIN);
   if (buttonState == LOW && !alreadyPressed && !capture) {
     alreadyPressed = true;
 
-    Serial.println("-,-,-"); // 通知 Python 脚本开始采集
+    Serial.println("-,-,-"); // Sync signal for Python script
     Serial.println("Starting capture (will run for 1 second)");
     capture_start_time = millis();
     capture = true;
 
-    indicateGestureColor(currentGesture);  // 显示当前手势颜色
+    indicateGestureColor(currentGesture);  // Light up RGB based on current label
   }
 
   if (buttonState == HIGH) {
     alreadyPressed = false;
   }
 
-  // 进行数据采集
+  // Sampling in progress
   if (capture) {
     capture_data();
   }
 
-  // 支持串口输入 Z / O / V 切换标签
+  // Allow Serial input to change gesture label
   if (Serial.available() > 0) {
     char c = Serial.read();
     if (c == 'Z' || c == 'O' || c == 'V') {

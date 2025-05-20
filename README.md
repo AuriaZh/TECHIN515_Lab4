@@ -77,23 +77,13 @@ This project implements a gesture-based "magic wand" using an ESP32-C3 microcont
 
 ---
 
-## ▶️ Demo Instructions
+## ▶️ Demo Video
 
-1. Upload `wand.ino` to ESP32
-2. Connect to Serial Monitor (115200 baud)
-3. Press button and perform one gesture
-4. Observe RGB color and serial prediction output
+Watch the full demo here:  
+[![Watch the demo video](https://img.youtube.com/vi/fXiE956W-jA/0.jpg)](https://youtube.com/shorts/fXiE956W-jA)
 
 ---
 
-## 🧾 Notes
-
-- Model runs in real-time on-device at ~100ms latency
-- RGB controlled via PWM (`analogWrite`)
-- Inference runs using Edge Impulse SDK
-- Project tested with both USB and battery-powered setups
-- 
----
 
 Built for TECHIN515 @ University of Washington | Spring 2025  
 By: Auria Zhang
